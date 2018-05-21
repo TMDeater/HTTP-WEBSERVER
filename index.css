@@ -1,0 +1,22 @@
+/* html, body {
+/*    background-color: #ffe1f0;
+} */
+html,body{
+  background-color: #ffe1f0;
+}
+
+h1 {
+    color: white;
+    text-align: center;
+}
+
+p {
+    font-family: verdana;
+    font-size: 20px;
+    color: white;
+}
+
+a {
+    font family: verdana;
+    color: white;
+}
