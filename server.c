@@ -246,27 +246,20 @@ void* request_func(void* con)
     write(connfd, "Content-Type: image/x-icon\n\n", 28);
     sendfile(connfd, fdimg, 0, 5848);
     close(fdimg);
-  } else if(!strncmp(readRequest, "GET /future.PNG", 15)) {
-    // fdimg = open("future.PNG", O_RDONLY);
-    // fstat(fdimg,&stat_len);
-    // write(connfd, "HTTP/1.1 200 OK\r\n", 17);
-    // write(connfd, "Content-Type: image/png\n\n", 25);
-    // sendfile(connfd, fdimg, 0, 157326);
-    // close(fdimg);
-    compressfile("future.PNG","future.gz");
-    fdimg = open("future.gz", O_RDONLY);
-    write(connfd, "HTTP/1.1 200 OK\r\n", 17);
-    write(connfd, "Content-Type: image/png\r\n", 25);
-    write(connfd, "Content-Encoding: gzip\n\n", 24);
-    sendfile(connfd, fdimg, 0, 157326);
-    close(fdimg);
-  }else if(!strncmp(readRequest, "GET /404.jpg", 12)) {
-    fdimg = open("404.jpg", O_RDONLY);
-    fstat(fdimg,&stat_len);
-    write(connfd, "HTTP/1.1 200 OK\r\n", 17);
-    write(connfd, "Content-Type: image/jpg\n\n", 25);
-    sendfile(connfd, fdimg, 0, 12915);
-    close(fdimg);
+  // } else if(!strncmp(readRequest, "GET /future.PNG", 15)) {
+  //   // fdimg = open("future.PNG", O_RDONLY);
+  //   // fstat(fdimg,&stat_len);
+  //   // write(connfd, "HTTP/1.1 200 OK\r\n", 17);
+  //   // write(connfd, "Content-Type: image/png\n\n", 25);
+  //   // sendfile(connfd, fdimg, 0, 157326);
+  //   // close(fdimg);
+  //   compressfile("future.PNG","future.gz");
+  //   fdimg = open("future.gz", O_RDONLY);
+  //   write(connfd, "HTTP/1.1 200 OK\r\n", 17);
+  //   write(connfd, "Content-Type: image/png\r\n", 25);
+  //   write(connfd, "Content-Encoding: gzip\n\n", 24);
+  //   sendfile(connfd, fdimg, 0, 157326);
+  //   close(fdimg);
   }else if(!strncmp(readRequest, "GET /1.pdf", 10)){
     int pdffile = open("1.pdf", O_RDONLY);
     fstat(pdffile,&stat_len);
@@ -278,6 +271,7 @@ void* request_func(void* con)
     write(connfd, "HTTP/1.1 200 OK\n", 16);
     write(connfd, "Transfer-Encoding: chunked\r\n", 28);
     write(connfd, "Content-Type: text/css\r\n", 25);
+    write(connfd, "\r\n",2);
     write(connfd, "\r\n",2);
     FILE *fp;
     char* line = NULL;
@@ -334,24 +328,37 @@ void* request_func(void* con)
           strcmp(filetype, "png")==0){
     int findImg = finddir("/home/oslab/COMP4621SER",0,requestfilename);
     if (findImg==1){
-      char newFilename[50];
 
-      sprintf(newFilename,"%s.gz",requestfilename);
-      printf("****Compress %s\n",newFilename);
-      compressfile(requestfilename,newFilename);
-      fdimg = open(newFilename, O_RDONLY);
-      FILE* f = fopen(requestfilename,"r");
-      fseek(f, 0, SEEK_END);
-      int siz = (int) ftell(f);
-      printf("file size is %d", siz);
-
-      char tmpstr[35];
-      sprintf(tmpstr, "Content-Type: image/%s\r\n", filetype);
-      write(connfd, "HTTP/1.1 200 OK\r\n", 17);
-      write(connfd, tmpstr, strlen(tmpstr));
-      write(connfd, "Content-Encoding: gzip\n\n", 24);
-      sendfile(connfd, fdimg, 0, siz);
-      close(fdimg);
+      if (strstr(readRequest,"Accept-Encoding: gzip")!=NULL){
+        char newFilename[50];
+        sprintf(newFilename,"%s.gz",requestfilename);
+        printf("****Compress %s\n",newFilename);
+        compressfile(requestfilename,newFilename);
+        fdimg = open(newFilename, O_RDONLY);
+        FILE* f = fopen(requestfilename,"r");
+        fseek(f, 0, SEEK_END);
+        int siz = (int) ftell(f);
+        printf("file size is %d", siz);
+        char tmpstr[35];
+        sprintf(tmpstr, "Content-Type: image/%s\r\n", filetype);
+        write(connfd, "HTTP/1.1 200 OK\r\n", 17);
+        write(connfd, tmpstr, strlen(tmpstr));
+        write(connfd, "Content-Encoding: gzip\n\n", 24);
+        sendfile(connfd, fdimg, 0, siz);
+        close(fdimg);
+      } else {
+        fdimg = open(requestfilename, O_RDONLY);
+        FILE* f = fopen(requestfilename,"r");
+        fseek(f, 0, SEEK_END);
+        int siz = (int) ftell(f);
+        printf("file size is %d", siz);
+        char tmpstr[35];
+        sprintf(tmpstr, "Content-Type: image/%s\n\n", filetype);
+        write(connfd, "HTTP/1.1 200 OK\r\n", 17);
+        write(connfd, tmpstr, strlen(tmpstr));
+        sendfile(connfd, fdimg, 0, siz);
+        close(fdimg);
+      }
     }
   }
   else if (finddir("/home/oslab/COMP4621SER",0,requestfilename)==-1){
